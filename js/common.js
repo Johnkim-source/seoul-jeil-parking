@@ -51,6 +51,15 @@ function badge(status) {
   return '<span class="badge badge-' + cls + '">' + esc(status) + '</span>';
 }
 
+function spotRange(z) {
+  if (!z.capacity) return '';
+  return z.start === z.end ? z.start + '번 자리' : z.start + '~' + z.end + '번 자리';
+}
+
+function spotLabel(a) {
+  return a.spot ? ' ' + esc(a.spot) + '번' : '';
+}
+
 var toastTimer;
 function toast(msg, type) {
   var el = $('#toast');

@@ -34,7 +34,7 @@ var TABLES = {
     sheet: '주차신청',
     columns: [['id', '신청ID'], ['createdAt', '신청일시'], ['date', '날짜'], ['service', '예배'],
       ['zone', '구역'], ['plate', '차량번호'], ['name', '이름'], ['phone', '연락처'], ['note', '비고'],
-      ['status', '상태'], ['adminMemo', '관리자메모'], ['updatedAt', '처리일시']]
+      ['status', '상태'], ['adminMemo', '관리자메모'], ['updatedAt', '처리일시'], ['spot', '자리번호']]
   },
   zones: {
     sheet: '주차구역',
@@ -46,20 +46,18 @@ var TABLES = {
   }
 };
 
-// 처음 setup() 할 때 들어가는 예시 값입니다. 시트에서 실제 값으로 바꿔 주세요.
+// 처음 setup() 할 때 들어가는 값입니다. 이후에는 시트에서 직접 수정하세요.
+// 자리번호는 '주차구역' 시트의 위에서부터 정원만큼 차례대로 매겨집니다.
+//   주차장1: 1~7번 / 주차장2: 8~11번 / 주차장3: 12~15번 / 주차장4(서제빌딩): 16~18번
 var DEFAULT_DATA = {
   zones: [
-    { name: '본관 지하주차장', capacity: '40', info: '본관 정문 진입' },
-    { name: '교육관 주차장', capacity: '20', info: '교육관 뒤편' },
-    { name: '외부 협력주차장', capacity: '30', info: '도보 약 5분' }
+    { name: '주차장1', capacity: '7', info: '' },
+    { name: '주차장2', capacity: '4', info: '' },
+    { name: '주차장3', capacity: '4', info: '' },
+    { name: '주차장4 (서제빌딩)', capacity: '3', info: '서제빌딩' }
   ],
   services: [
-    { name: '주일 1부 예배', time: '07:30' },
-    { name: '주일 2부 예배', time: '09:30' },
-    { name: '주일 3부 예배', time: '11:30' },
-    { name: '주일 오후예배', time: '14:00' },
-    { name: '수요예배', time: '19:30' },
-    { name: '금요기도회', time: '21:00' }
+    { name: '1부 예배', time: '' }
   ]
 };
 
@@ -217,6 +215,7 @@ function apply_(d) {
   if (zone.remaining <= 0) throw userError('선택하신 구역은 정원이 마감되었습니다. 다른 구역을 선택해 주세요.');
 
   var application = {
+    spot: String(zone.freeSpots[0]), // 해당 구역의 가장 앞 빈 자리 자동 배정
     id: newId_('P'),
     createdAt: Env.now(),
     date: date,
@@ -278,7 +277,7 @@ function adminApplications_(d) {
   }).sort(function (a, b) {
     return a.date.localeCompare(b.date) ||
       (serviceOrder.indexOf(a.service) - serviceOrder.indexOf(b.service)) ||
-      a.zone.localeCompare(b.zone) ||
+      ((parseInt(a.spot, 10) || 999) - (parseInt(b.spot, 10) || 999)) ||
       a.createdAt.localeCompare(b.createdAt);
   });
 
@@ -286,7 +285,7 @@ function adminApplications_(d) {
   if (date) {
     services.forEach(function (s) {
       if (service && s.name !== service) return;
-      summary.push({ service: s.name, time: s.time, zones: computeAvailability_(all, zones, date, s.name) });
+      summary.push({ service: s.name, time: s.time, zones: computeAvailability_(all, zones, date, s.name, true) });
     });
   }
   return { applications: list.map(strip_), summary: summary, zones: zones, services: services };
@@ -296,15 +295,42 @@ function adminUpdateApplication_(d) {
   var app = findBy_('applications', 'id', text_(d.id, 40));
   if (!app) throw userError('신청 내역을 찾을 수 없습니다.');
   var patch = { updatedAt: Env.now() };
+  var zones = zones_();
   if (d.status != null) {
     if (APP_STATUSES.indexOf(d.status) < 0) throw userError('잘못된 상태 값입니다.');
     patch.status = d.status;
   }
-  if (d.zone != null) {
-    if (!zones_().some(function (z) { return z.name === d.zone; })) throw userError('존재하지 않는 구역입니다.');
-    patch.zone = d.zone;
+  var spot = app.spot;
+  var zoneName = app.zone;
+  if (d.spot != null && String(d.spot) !== '') {
+    // 자리번호를 고르면 구역은 자동으로 정해짐
+    var n = parseInt(d.spot, 10);
+    var z = zones.filter(function (x) { return n >= x.start && n <= x.end; })[0];
+    if (!z) throw userError('존재하지 않는 자리번호입니다.');
+    spot = String(n);
+    zoneName = z.name;
+  } else if (d.zone != null && d.zone !== app.zone) {
+    if (!zones.some(function (x) { return x.name === d.zone; })) throw userError('존재하지 않는 구역입니다.');
+    zoneName = d.zone;
+    spot = '';
   }
   if (d.adminMemo != null) patch.adminMemo = text_(d.adminMemo, 200);
+
+  // 자리를 차지하는 상태라면 자리 중복을 확인하고, 없으면 빈 자리 자동 배정
+  var finalStatus = patch.status || app.status;
+  if (ACTIVE_STATUSES.indexOf(finalStatus) >= 0) {
+    var others = Env.db.all('applications').filter(function (a) { return a.id !== app.id; });
+    var zone = computeAvailability_(others, zones, app.date, app.service)
+      .filter(function (x) { return x.name === zoneName; })[0];
+    if (!zone) throw userError('존재하지 않는 구역입니다.');
+    if (zone.freeSpots.indexOf(parseInt(spot, 10)) < 0) {
+      if (d.spot != null && String(d.spot) !== '') throw userError(spot + '번 자리는 이미 다른 차량이 사용 중입니다.');
+      if (!zone.freeSpots.length) throw userError(zoneName + '에 빈 자리가 없습니다.');
+      spot = String(zone.freeSpots[0]);
+    }
+  }
+  patch.zone = zoneName;
+  patch.spot = spot;
   Env.db.update('applications', app._row, patch);
   return strip_(merge_(app, patch));
 }
@@ -436,9 +462,14 @@ function findBy_(table, key, value) {
   return Env.db.all(table).filter(function (r) { return r[key] === value; })[0] || null;
 }
 
+/** 주차구역 목록. 자리번호는 위에서부터 정원만큼 차례대로 (start~end) */
 function zones_() {
+  var next = 1;
   return Env.db.all('zones').map(function (z) {
-    return { name: z.name, capacity: parseInt(z.capacity, 10) || 0, info: z.info || '' };
+    var cap = parseInt(z.capacity, 10) || 0;
+    var o = { name: z.name, capacity: cap, info: z.info || '', start: next, end: next + cap - 1 };
+    next += cap;
+    return o;
   });
 }
 
@@ -446,21 +477,37 @@ function services_() {
   return Env.db.all('services').map(function (s) { return { name: s.name, time: s.time || '' }; });
 }
 
-function computeAvailability_(apps, zones, date, service) {
+/** 구역별 사용 현황. withDetail=true 이면 자리별 차량 정보 포함 (관리자용) */
+function computeAvailability_(apps, zones, date, service, withDetail) {
   return zones.map(function (z) {
     var list = apps.filter(function (a) {
       return a.date === date && a.service === service && a.zone === z.name && isActive_(a);
     });
     var pending = list.filter(function (a) { return a.status === STATUS.WAIT; }).length;
-    return {
+    var taken = {};
+    list.forEach(function (a) { var n = parseInt(a.spot, 10); if (n) taken[n] = a; });
+    var freeSpots = [];
+    for (var n = z.start; n <= z.end; n++) if (!taken[n]) freeSpots.push(n);
+    var o = {
       name: z.name,
       capacity: z.capacity,
       info: z.info,
+      start: z.start,
+      end: z.end,
       approved: list.length - pending,
       pending: pending,
       used: list.length,
-      remaining: Math.max(0, z.capacity - list.length)
+      freeSpots: freeSpots,
+      remaining: Math.max(0, Math.min(z.capacity - list.length, freeSpots.length))
     };
+    if (withDetail) {
+      o.spots = [];
+      for (var m = z.start; m <= z.end; m++) {
+        var a = taken[m];
+        o.spots.push(a ? { no: m, id: a.id, plate: a.plate, name: a.name, status: a.status } : { no: m });
+      }
+    }
+    return o;
   });
 }
 

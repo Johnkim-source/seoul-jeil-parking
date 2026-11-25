@@ -92,7 +92,7 @@ async function loadZones() {
       return '<label class="choice' + (full ? ' full' : '') + '">' +
         '<input type="radio" name="zone" value="' + esc(z.name) + '"' + (z.name === pick ? ' checked' : '') + (full ? ' disabled' : '') + '>' +
         '<div class="main"><div class="title">' + esc(z.name) + '</div>' +
-        (z.info ? '<div class="sub">' + esc(z.info) + '</div>' : '') + '</div>' +
+        '<div class="sub">' + esc(spotRange(z) + (z.info && z.name.indexOf(z.info) < 0 ? ' · ' + z.info : '')) + '</div></div>' +
         '<span class="remain ' + cls + '">' + (full ? '마감' : '잔여 ' + z.remaining + ' / ' + z.capacity) + '</span></label>';
     }).join('');
   } catch (e) {
@@ -118,7 +118,7 @@ async function submitApply(e) {
     });
     $('#apply-note').value = '';
     $('#apply-result').innerHTML = '<div class="notice success"><b>신청이 접수되었습니다.</b><br>' +
-      esc(fmtDate(a.date)) + ' · ' + esc(a.service) + '<br>' + esc(a.zone) + ' · <span class="plate">' + esc(a.plate) + '</span> ' + badge(a.status) +
+      esc(fmtDate(a.date)) + ' · ' + esc(a.service) + '<br>' + esc(a.zone) + spotLabel(a) + ' · <span class="plate">' + esc(a.plate) + '</span> ' + badge(a.status) +
       (a.status === '대기' ? '<br><small>관리자 승인 후 확정됩니다. [내 신청 조회]에서 상태를 확인하세요.</small>' : '') + '</div>';
     toast('주차 신청이 완료되었습니다.', 'success');
     loadZones();
@@ -172,7 +172,7 @@ function renderMine(vehicles, apps, phone) {
   html += apps.length ? '<div class="list">' + apps.map(function (a) {
     var canCancel = (a.status === '대기' || a.status === '승인') && a.date >= today;
     return '<div class="item"><div class="head"><b class="grow">' + esc(fmtDate(a.date)) + ' · ' + esc(a.service) + '</b>' + badge(a.status) + '</div>' +
-      '<div class="meta"><span class="plate">' + esc(a.plate) + '</span> &nbsp;<b>' + esc(a.zone) + '</b></div>' +
+      '<div class="meta"><span class="plate">' + esc(a.plate) + '</span> &nbsp;<b>' + esc(a.zone) + spotLabel(a) + '</b></div>' +
       (a.note ? '<div class="meta">요청: ' + esc(a.note) + '</div>' : '') +
       (a.adminMemo ? '<div class="memo">관리자 안내: ' + esc(a.adminMemo) + '</div>' : '') +
       (canCancel ? '<div class="actions"><button class="btn sm line" data-cancel="' + esc(a.id) + '">신청 취소</button></div>' : '') +

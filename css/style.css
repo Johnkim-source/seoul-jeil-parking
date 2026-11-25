@@ -160,6 +160,26 @@ textarea { min-height: 70px; resize: vertical; }
 .bar i.a { background: var(--ok); }
 .bar i.p { background: #f0b44c; }
 
+.lot { margin: 8px 0 12px; }
+.lot-name { font-size: 13px; font-weight: 700; margin-bottom: 6px; }
+.spots { display: grid; grid-template-columns: repeat(auto-fill, minmax(58px, 1fr)); gap: 6px; }
+.spot {
+  border-radius: 8px; padding: 6px 4px; text-align: center; border: 1.5px solid transparent;
+  display: flex; flex-direction: column; line-height: 1.2;
+}
+.spot b { font-size: 15px; }
+.spot small { font-size: 11px; }
+.spot.free { border: 1.5px dashed #c9ced8; color: #98a1b0; background: #fafbfc; }
+.spot.ok { background: var(--ok-bg); color: var(--ok); border-color: #9fd8b6; }
+.spot.wait { background: var(--wait-bg); color: var(--wait); border-color: #f3cf8a; }
+.spot.in { background: var(--in-bg); color: var(--in); border-color: #a9c0f7; }
+.legend { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 12px; color: var(--muted); margin-top: 4px; }
+.legend .spot { display: inline-block; width: 14px; height: 14px; padding: 0; border-radius: 4px; margin-left: 6px; }
+.spot-no {
+  min-width: 30px; height: 30px; border-radius: 8px; background: var(--primary); color: #fff;
+  display: inline-grid; place-items: center; font-weight: 800; font-size: 15px; padding: 0 6px;
+}
+
 .filters { display: grid; grid-template-columns: 1.2fr 1.2fr 1fr auto; gap: 8px; margin-bottom: 14px; align-items: end; }
 .filters label.field { margin: 0; }
 
