@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>서울제일교회 주차관리</title>
+  <meta name="theme-color" content="#1e3a6b">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <div class="logo">P</div>
+      <div>
+        <h1 id="church-name">서울제일교회</h1>
+        <p>교인 차량 등록 · 주차 신청</p>
+      </div>
+      <div class="spacer"></div>
+      <a class="link" href="admin.html">관리자</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="demo-banner" id="demo-banner" hidden>
+      <b>데모 모드</b> — 서버(구글 시트)가 연결되지 않아 이 브라우저에만 저장됩니다.
+      예시 차량: 010-1234-5678 / 12가3456
+    </div>
+
+    <nav class="tabs">
+      <button data-tab="apply" class="active">주차 신청</button>
+      <button data-tab="register">차량 등록</button>
+      <button data-tab="mine">내 신청 조회</button>
+    </nav>
+
+    <!-- 주차 신청 -->
+    <section data-panel="apply">
+      <form class="card" id="apply-form" autocomplete="on">
+        <h2>주차 신청</h2>
+        <p class="desc">등록된 차량으로 예배 시간별 주차를 신청합니다.</p>
+
+        <div class="step"><span class="num">1</span>연락처로 내 차량 불러오기</div>
+        <div class="inline">
+          <input id="apply-phone" type="tel" inputmode="numeric" placeholder="010-0000-0000" data-phone autocomplete="tel">
+          <button type="button" class="btn" id="load-vehicles">불러오기</button>
+        </div>
+        <div id="vehicle-list" class="choices" style="margin-top:10px"></div>
+
+        <div class="step"><span class="num">2</span>날짜와 예배 선택</div>
+        <div class="row">
+          <label class="field"><span>날짜 <em>*</em></span><input type="date" id="apply-date" required></label>
+          <label class="field"><span>예배 <em>*</em></span><select id="apply-service" required></select></label>
+        </div>
+
+        <div class="step"><span class="num">3</span>주차 구역 선택</div>
+        <div id="zone-list" class="choices"><div class="empty">불러오는 중…</div></div>
+
+        <label class="field" style="margin-top:14px"><span>요청사항</span>
+          <textarea id="apply-note" maxlength="200" placeholder="예) 거동이 불편한 어르신 동승, 일찍 출차 예정 등"></textarea>
+        </label>
+
+        <button type="submit" class="btn block" id="apply-submit">주차 신청하기</button>
+        <div id="apply-result"></div>
+      </form>
+    </section>
+
+    <!-- 차량 등록 -->
+    <section data-panel="register" hidden>
+      <form class="card" id="register-form" autocomplete="on">
+        <h2>교인 차량 등록</h2>
+        <p class="desc">처음 한 번만 등록하면 이후에는 연락처만으로 주차를 신청할 수 있습니다. 같은 차량번호로 다시 등록하면 정보가 수정됩니다.</p>
+        <div class="row">
+          <label class="field"><span>이름 <em>*</em></span><input name="name" required maxlength="30" autocomplete="name"></label>
+          <label class="field"><span>연락처 <em>*</em></span><input name="phone" type="tel" inputmode="numeric" required placeholder="010-0000-0000" data-phone autocomplete="tel"></label>
+        </div>
+        <div class="row">
+          <label class="field"><span>차량번호 <em>*</em></span><input name="plate" required placeholder="예) 12가3456" maxlength="12"></label>
+          <label class="field"><span>교구 / 부서</span><input name="group" maxlength="30" placeholder="예) 3교구, 청년부"></label>
+        </div>
+        <div class="row">
+          <label class="field"><span>차종</span><input name="model" maxlength="30" placeholder="예) 쏘나타"></label>
+          <label class="field"><span>색상</span><input name="color" maxlength="20" placeholder="예) 흰색"></label>
+        </div>
+        <label class="field"><span>메모</span><input name="memo" maxlength="200" placeholder="장애인 차량, 경차 등 참고사항"></label>
+        <label class="check">
+          <input type="checkbox" name="agree" required>
+          <span>주차 관리를 위해 이름·연락처·차량번호를 수집하며, 교회 주차 안내 외의 용도로 사용하지 않습니다. 이에 동의합니다. <em style="color:var(--no);font-style:normal">(필수)</em></span>
+        </label>
+        <button type="submit" class="btn block">차량 등록하기</button>
+        <div id="register-result"></div>
+      </form>
+    </section>
+
+    <!-- 내 신청 조회 -->
+    <section data-panel="mine" hidden>
+      <div class="card">
+        <h2>내 신청 조회</h2>
+        <p class="desc">연락처로 등록 차량과 주차 신청 내역을 확인하고 취소할 수 있습니다.</p>
+        <form class="inline" id="mine-form">
+          <input id="mine-phone" type="tel" inputmode="numeric" placeholder="010-0000-0000" data-phone required>
+          <button class="btn" type="submit">조회</button>
+        </form>
+        <div id="mine-result"></div>
+      </div>
+    </section>
+  </main>
+
+  <footer>서울제일교회 주차관리 · 문의는 교회 사무실로 연락 주세요</footer>
+  <div id="toast" class="toast"></div>
+
+  <script src="config.js"></script>
+  <script src="apps-script/Code.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

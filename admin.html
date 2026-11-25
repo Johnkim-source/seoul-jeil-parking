@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>주차관리 관리자</title>
+  <meta name="theme-color" content="#1e3a6b">
+  <meta name="robots" content="noindex">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header class="top">
+    <div class="inner">
+      <div class="logo">P</div>
+      <div>
+        <h1 id="church-name">서울제일교회</h1>
+        <p>주차관리 · 관리자</p>
+      </div>
+      <div class="spacer"></div>
+      <a class="link" href="index.html">교인 화면</a>
+      <a class="link" href="#" id="logout" hidden>로그아웃</a>
+    </div>
+  </header>
+
+  <main>
+    <div class="demo-banner" id="demo-banner" hidden>
+      <b>데모 모드</b> — 관리자 비밀번호: <code>admin</code>
+    </div>
+
+    <!-- 로그인 -->
+    <form class="card" id="login-form">
+      <h2>관리자 로그인</h2>
+      <p class="desc">주차 담당자에게 공유된 관리자 비밀번호를 입력하세요.</p>
+      <label class="field"><span>비밀번호</span><input type="password" id="password" required autocomplete="current-password"></label>
+      <button class="btn block" type="submit">로그인</button>
+    </form>
+
+    <div id="admin-app" hidden>
+      <nav class="tabs">
+        <button data-tab="apps" class="active">신청 관리</button>
+        <button data-tab="gate">입차 확인</button>
+        <button data-tab="vehicles">등록 차량</button>
+      </nav>
+
+      <!-- 신청 관리 -->
+      <section data-panel="apps" class="card">
+        <h2>주차 신청 관리</h2>
+        <p class="desc">날짜·예배별 신청을 승인/반려하고 구역을 배정합니다.</p>
+        <form class="filters" id="apps-filter">
+          <label class="field"><span>날짜</span><input type="date" id="f-date"></label>
+          <label class="field"><span>예배</span><select id="f-service"><option value="">전체</option></select></label>
+          <label class="field"><span>상태</span>
+            <select id="f-status">
+              <option value="">전체</option><option>대기</option><option>승인</option><option>입차</option><option>반려</option><option>취소</option>
+            </select>
+          </label>
+          <button class="btn" type="submit">조회</button>
+        </form>
+        <div class="summary" id="apps-summary"></div>
+        <div class="inline" style="justify-content:space-between;align-items:center;margin-bottom:10px">
+          <b id="apps-count"></b>
+          <button class="btn sm ok" id="approve-all" type="button" hidden>대기 일괄 승인</button>
+        </div>
+        <div class="list" id="apps-list"></div>
+      </section>
+
+      <!-- 입차 확인 -->
+      <section data-panel="gate" class="card" hidden>
+        <h2>입차 확인</h2>
+        <p class="desc">주차 안내 봉사자용입니다. 차량번호 전체 또는 뒤 4자리로 검색하세요.</p>
+        <form class="inline" id="gate-form">
+          <input id="gate-q" inputmode="search" placeholder="예) 3456" required>
+          <input id="gate-date" type="date" style="max-width:170px">
+          <button class="btn" type="submit">검색</button>
+        </form>
+        <div id="gate-result" style="margin-top:14px"></div>
+      </section>
+
+      <!-- 등록 차량 -->
+      <section data-panel="vehicles" class="card" hidden>
+        <h2>등록 차량</h2>
+        <p class="desc">이름·연락처·차량번호·교구로 검색할 수 있습니다. 문제 차량은 '정지'하면 신청이 제한됩니다.</p>
+        <form class="inline" id="veh-form">
+          <input id="veh-q" placeholder="검색어 (비우면 전체)">
+          <button class="btn" type="submit">검색</button>
+        </form>
+        <p class="hint" id="veh-count"></p>
+        <div class="list" id="veh-list"></div>
+      </section>
+    </div>
+  </main>
+
+  <div id="toast" class="toast"></div>
+
+  <script src="config.js"></script>
+  <script src="apps-script/Code.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/common.js"></script>
+  <script src="js/admin.js"></script>
+</body>
+</html>
